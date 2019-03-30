@@ -1,0 +1,27 @@
+{% extends 'baseHomeLoggedIn.html' %}
+
+{% block nav_element %}
+
+{% endblock %}
+
+{% block body %}
+    <h3 style='text-align: center;'><button type="button" class="btn btn-outline-primary">Welcome {{ online_user.username }}</button></h3>
+
+    <div class='container'>
+        <form method="post" action="{% url 'hackathon:take_driver' %}">
+            {% csrf_token %}
+            {% for x in online_user.detected_car.all %}
+                <input type='radio' value='{{x.id}}' name='car_id' id='choice{{ forloop.counter }}'>
+                <label for='choice{{forloop.counter}}'>
+                    <div style='display: block;'> {{ x.car_no }} </div>
+                    <div>
+                        <div>{{ x.lat }}</div>
+                        <div>{{ x.lon }}</div>
+                    </div>
+                </label>
+                <button class='btn btn-danger'> Take Him ! </button>
+                <!--button class='btn btn-success'> Done ! </button-->
+            {% endfor %}
+        </form>
+    </div>
+{% endblock %}
