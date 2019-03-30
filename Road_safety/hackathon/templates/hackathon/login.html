@@ -1,0 +1,20 @@
+{% extends 'baseHome.html' %}
+
+{% block body %}
+<style>
+    label{
+        padding: 0px 20px;
+        width: 20%;
+    }
+</style>
+
+
+<h3 style="text-align: center;">Login</h3>
+<div class='container' style='text-align: center; background-color: rgba(190,190,190,0.2); padding: 25px 0px 10px 0px; width: 50%;'>
+    <form method='post'>
+        {% csrf_token %}
+        <div>{{ form.as_p }}</div>
+        <button class='btn btn-success' style="text-align: center;">Login</button>
+    </form>
+</div>
+{% endblock %} 
