@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+	<form method='post' action="{% url 'hackathon:recordDrowsy' %}">
+        {% csrf_token %}
+        <div class='list-group'>
+            {% for d in drivers %}
+            <div class='list-group-item'>
+                <input type='radio' value='{{d.id}}' name='choice' id='choice{{forloop.counter}}'>
+                <label for='choice{{forloop.counter}}'>
+                    <div> {{d.car_no}} </div>
+                </label>
+            </div>
+            {% endfor %}
+            <button class='btn btn-danger'>Show Recording</button>
+        </div>
+    </form>
+</body>
+</html>
