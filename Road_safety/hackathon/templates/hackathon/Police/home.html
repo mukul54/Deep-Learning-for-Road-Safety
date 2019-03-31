@@ -5,7 +5,10 @@
 {% endblock %}
 
 {% block body %}
-    <h3 style='text-align: center;'><button type="button" class="btn btn-outline-primary">Welcome {{ online_user.username }}</button></h3>
+    {% load static %}
+    <img src="{% static 'hackathon/pics/india.jpg' %}" width='150px' height='150px' ALIGN='right'/>
+<div style="color:indianred"><h4><b>Government of India</b></h4></div><div style="color:darkblue"><h5><b>Traffic police</b></h5></div>
+    <h3 style='text-align: center;'><button style="margin: 2vw" type="button" class="btn btn-outline-primary">Welcome {{ online_user.name }}</button></h3>
 
     <div class='container'>
         <form method="post" action="{% url 'hackathon:take_driver' %}">
@@ -13,10 +16,9 @@
             {% for x in online_user.detected_car.all %}
                 <input type='radio' value='{{x.id}}' name='car_id' id='choice{{ forloop.counter }}'>
                 <label for='choice{{forloop.counter}}'>
-                    <div style='display: block;'> {{ x.car_no }} </div>
+                    <div style='display: block;'><b>Car Number : </b> {{ x.car_no }} </div>
                     <div>
-                        <div>{{ x.lat }}</div>
-                        <div>{{ x.lon }}</div>
+                        <div><b>Estimated time : </b>{{min_time}} hrs</div>
                     </div>
                 </label>
                 <button class='btn btn-danger'> Take Him ! </button>
