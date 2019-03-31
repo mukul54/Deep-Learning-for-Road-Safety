@@ -6,7 +6,7 @@ from math import sin, cos, sqrt, atan2, radians
 import time
 
 ######################## ML #############
-"""
+
 import cv2
 import numpy as np
 import dlib
@@ -14,31 +14,37 @@ import glob
 from scipy.spatial import distance
 from imutils import face_utils
 from keras.models import load_model
+import tensorflow as tf
 import time
 #from inception_blocks_v2 import *
-from pygame import mixer
+#from pygame import mixer
 import os
+
 
 
 detector = dlib.get_frontal_face_detector()
 model = load_model('facenet_keras_weight.h5')
+graph = tf.get_default_graph()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-
+"""
 def alarm():
         mixer.init()
         mixer.music.load("/home/mukul/Desktop/machine_learning/iitg.ai/facenet/Wake-up-sounds.mp3")
         mixer.music.play(0)
         time.sleep(0.05)
-
+"""
         
-def recognize_face(face_descriptor, database):
+def recognize_face(request, face_descriptor, database):
+    print('encoding start.......\n')
     encoding = img_to_encoding(face_descriptor, model)
+    print('encoding done.......\n')
     min_dist = 100
     identity = None
-
+    
+    #print(database.items())
     # Loop over the database dictionary's names and encodings.
     for (name, db_enc) in database.items():
-
+        print('entered loop in database items...\n')
         # Compute L2 distance between the target "encoding" and the current "emb" from the database.
         dist = np.linalg.norm(db_enc - encoding)
 
@@ -46,45 +52,64 @@ def recognize_face(face_descriptor, database):
 
         # If this distance is less than the min_dist, then set min_dist to dist, and identity to name
         if dist < min_dist:
+            print('dist<min_dist\n')
+            print('min dist = ' + str(dist))
             min_dist = dist
             identity = name
     ans = 1
-    names = ['Mukul','Jayant','Chandan']
+    names = ['Mukul','Parag']
     for i in range( len(names) ):
-        if int(identity) > i*10 and int(identity) <= (i+1)*10 and min_dist <=1.5:
+        
+        if identity:
+            print(identity)
+        else:
+            print('identity is none !!')
+        if int(identity) > i*20 and int(identity) <= (i+1)*20 and min_dist <=9:
             ans = 1
-            return (names[i] + " " + str(ans) ), min_dist
+            request.session['ans']=ans
+            return (names[i] ), min_dist, ans
         
     
-    if  min_dist >1.5 and min_dist <= 1.8:
-            ans=3
-            return str('Not Sure ' + str(ans) ), min_dist
+    #if  min_dist >1.5 and min_dist <= 1.8:
+            #ans=3
+            #return str('Not Sure '), min_dist, ans
         
-    if min_dist > 1.8:
+    if min_dist > 8.5:
             ans = 2
-            print(ans)
-            return ('Not a member ' + str(ans)), min_dist
+            request.session['ans']=ans
+            #print(ans)
+    request.session['ans']=ans
+    return ('Fraud driver detected'), min_dist, ans
 
 
 
-def extract_face_info(img, img_rgb, database):
+def extract_face_info(request, img, img_rgb, database):
+    ans = -1
     faces = detector(img_rgb)
+    print('Face detected')
     x, y, w, h = 0, 0, 0, 0
     if len(faces) > 0:
+        print('length of faces > 0 \n')
         for face in faces:
+            print('entered for loop\n')
             (x, y, w, h) = face_utils.rect_to_bb(face)
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 0), 2)
             image = img[y:y + h, x:x + w]
             if(image.size == 0):
+                print('image size 0 ......\n')
                 continue
-            name, min_dist = recognize_face(image, database)
-            
-            if min_dist < 1.8:
+            print('recognizing face................\n')
+            name, min_dist, ans = recognize_face(request, image, database)
+            print('face recognized............\n')
+            if min_dist < 8.5:
+                print('putting text !!!')
                 cv2.putText(img, "Face : " + name, (x, y - 50), cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 255, 0), 2)
                 cv2.putText(img, "Dist : " + str(min_dist), (x, y - 20), cv2.FONT_HERSHEY_PLAIN, 1.5, ( 255,0, 0), 2)
             else:
                 cv2.putText(img,  name, (x, y - 20), cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 255), 2)
-                alarm()
+                #alarm()
+            #request.session['ans'] = ans
+            #return ans
               
             
 def img_path_to_encoding(image_path, model):
@@ -98,8 +123,12 @@ def img_to_encoding(image, model):
     img = image[...,::-1]
     img = np.around((img)/255.0, decimals=12)
     x_train = np.array([img])
-    embedding = model.predict(x_train)
-    return embedding
+    print('predicting!!')
+    global graph
+    with graph.as_default():
+        embedding = model.predict(x_train)
+        print('predicted')
+        return embedding
     
                  
 def initialize():
@@ -108,14 +137,22 @@ def initialize():
     # load all the images of individuals to recognize into the database
     for file in glob.glob("images/*"):
         identity = os.path.splitext(os.path.basename(file))[0]
+        #print(identity)
         database[identity] = img_path_to_encoding(file, model)
     return database
 
 
-def recognize():
+def recognize(request):
     database = initialize()
+    start_time = time.time()
     cap = cv2.VideoCapture(0)
+    ans=0
+    sum_all = 0
+    count = 0
+    #print('1')
     while True:
+        #print('2')
+        #graph = tf.get_default_graph()
         ret, img = cap.read()
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if(img.size == 0 or img_rgb.size == 0):
@@ -124,8 +161,48 @@ def recognize():
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         subjects = detector(gray, 0)
         for subject in subjects:
-            extract_face_info(img, img_rgb, database)
-        
+            print('extracting face info...\n')
+            extract_face_info(request, img, img_rgb, database)
+            ans=request.session['ans']
+            print('ans ====================================== ' + str(ans))
+            if ans==1:
+                print('done !! You are safe!!')
+                print(time.time()-start_time)
+                count += 1
+                sum_all += 1
+                if time.time()-start_time > 10:
+                    print('called')
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    break
+            if ans==2:
+                print('Fraud driver detected !!')
+                print(time.time()-start_time)
+                count += 1
+                sum_all += 2
+                if time.time()-start_time > 10:
+                    cap.release()
+                    cv2.destroyAllWindows()
+               # if cv2.waitKey(100) == ord('q'):
+               #     break
+                    break
+                #return
+        if sum_all==0 and count==0:
+            avg = 0
+            print('avg = 0')
+            recognize(request)
+        else:    
+            avg = float(sum_all/count)
+        print('avg = ' + str(avg))
+        if avg>=1.5 and avg<=2:
+            ans = 2
+            print('ans set 2')
+        if avg<1.5 and avg>=1:
+            ans = 1
+            print('ans set 1')
+        if (ans==1 or ans==2) and time.time()-start_time>10:
+            break
+        request.session['ans']=ans
         cv2.imshow('Recognizing faces', img)
         if cv2.waitKey(100) == ord('q'):
             break
@@ -134,7 +211,7 @@ def recognize():
     cv2.destroyAllWindows()
 
 
-#recognize()
+#recognize(request)
 
 
 
@@ -149,7 +226,7 @@ def recognize():
 
 
 
-"""
+
 
 
 ######################################
@@ -209,7 +286,14 @@ def record(request):
     
     ###################
     
-    
+    recognize(request)
+    ans = request.session['ans']
+    if ans==1:
+        active_driver.detected = False
+        active_driver.save()
+    if ans==2:
+        active_driver.detected = True
+        active_driver.save()
     ##################
     
     if active_driver.detected:
@@ -236,6 +320,7 @@ def record(request):
         ## SHOW DETECTED DRIVER
         print('\n\nNearest police station found ! Informed to ' + str(police.username) + '. \n\nOn duty , gonna catch : ' + str(police.detected_car.all()) + '\n\n')
         print('\n\nmin distance = ' + str(min_dist)+'\n\n')
+        #recognize(request)
         return render(request, 'hackathon/Camera/record.html', {'active_driver': active_driver})
     else:
         print('\n\nDriver is not detected as a fraud driver\n\n')
