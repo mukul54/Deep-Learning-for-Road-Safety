@@ -12,4 +12,7 @@ urlpatterns=[
     path('dumb/', views.dumb, name='dumb'),
     path('take_driver/', views.take_driver, name='take_driver'),
     path('mainserver/', views.mainserver, name='mainserver'),
+    path('drowsyHome/', views.drowsyHome, name='drowsyHome'),
+    path('recordDrowsy', views.recordDrowsy, name='recordDrowsy'),
+    path('redirectPageToRecordDrowsy/', views.redirectPageToRecordDrowsy, name='redirectPageToRecordDrowsy'),
 ]
