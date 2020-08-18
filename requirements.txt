@@ -1,4 +1,4 @@
-tensorflow==1.14.0
+tensorflow==1.15.2
 dlib==19.17.0
 numpy==1.15.1
 pygame==1.9.4
